@@ -1,118 +1,68 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * Generated with the TypeScript template
- * https://github.com/react-native-community/react-native-template-typescript
- *
- * @format
- */
-
-import React from 'react';
+import React, {useEffect, useState} from 'react';
+import {Alert, SafeAreaView, ScrollView, StatusBar, View} from 'react-native';
+import {MetricTile} from './src/components/metric-tile.component';
 import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar,
-} from 'react-native';
-
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  createMetric,
+  createMetricItem,
+  getMetrics,
+} from './src/models/metric.model';
+import {Metrics} from './src/types/metric.types';
+import {isToday} from './src/utils/date.utils';
+import {Button} from './src/components/button.component';
 
 declare const global: {HermesInternal: null | {}};
 
 const App = () => {
+  const [allMetrics, setAllMetrics] = useState<Metrics>({});
+
+  useEffect(() => {
+    (async () => {
+      setAllMetrics(await getMetrics());
+    })();
+  });
+
+  const increment = async (id: string) => {
+    const metrics = await createMetricItem(id, {date: new Date().getTime()});
+    setAllMetrics(metrics);
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
+        <ScrollView>
+          {Object.keys(allMetrics).map((key) => {
+            const metric = allMetrics[key];
+            return (
+              <MetricTile
+                key={metric.name}
+                count={
+                  metric.items.filter((item) => {
+                    return isToday(item.date);
+                  }).length
+                }
+                name={metric.name}
+                onPress={() => increment(key)}
+              />
+            );
+          })}
+          <View style={{flex: 1, alignItems: 'center'}}>
+            <Button
+              shape="circle"
+              onPress={() => {
+                Alert.prompt('Metric name', undefined, (name) => {
+                  createMetric(name, {
+                    name,
+                    items: [],
+                  });
+                });
+              }}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
-  },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
-    backgroundColor: Colors.white,
-  },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
-  },
-});
 
 export default App;
